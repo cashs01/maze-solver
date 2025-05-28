@@ -82,7 +82,7 @@ class Cell():
 
     def draw_move(self, to_cell, undo=False):
         if not undo:
-            color = "red"
+            color = "green"
         else:
             color = "gray"
         if self.__win is None:
@@ -119,6 +119,7 @@ class Maze():
         self.__create_cells()
         self.__break_entrance_and_exit()
         self.__break_walls_r(0, 0)
+        self.__reset_cells_visited()
 
     def __create_cells(self):
         for i in range(self.__num_cols):
@@ -141,13 +142,13 @@ class Maze():
         x2 = x1 + self.__cell_size_x
         y2 = y1 + self.__cell_size_y
         self.__cells[i][j].draw(x1, x2, y1, y2)
-        self.__animate()
+        self._animate()
 
-    def __animate(self):
+    def _animate(self):
         if self.__win is None:
             return
         self.__win.redraw()
-        time.sleep(0.02)
+        time.sleep(0.003)
 
     def __break_entrance_and_exit(self):
         top_left_cell = self.__cells[0][0]
@@ -178,9 +179,8 @@ class Maze():
                 if not self.__cells[i + 1][j].visited:
                     possible_directions.append((i + 1, j))
 
-            if len(possible_directions) == 0:
+            if not possible_directions:
                 return
-
             direction = random.choice(possible_directions)
 
             # Remove wall between cells
@@ -207,12 +207,76 @@ class Maze():
 
             self.__break_walls_r(direction[0], direction[1])
 
+    def __reset_cells_visited(self):
+        for i in range(self.__num_cols):
+            for j in range(self.__num_rows):
+                self.__cells[i][j].visited = False
+
+    def solve(self):
+        return self._solve_r(0, 0)
+
+    def _solve_r(self, i, j):
+        self._animate()
+        current_cell = self.__cells[i][j]
+        current_cell.visited = True
+        end_cell = self.__cells[self.__num_cols - 1][self.__num_rows - 1]
+        if current_cell == end_cell:
+            return True
+        directions = [
+            (0, -1), # Up
+            (0, 1), # Down
+            (-1, 0), # Left
+            (1, 0), # Right
+        ]
+        # If there is not a cell in that direction,
+        has_cell = []
+        for di, dj in directions:
+            if i + di < 0 or i + di >= self.__num_cols:
+                continue
+            if j + dj < 0 or j + dj >= self.__num_rows:
+                continue
+            has_cell.append((di, dj))
+        # No wall blocking,
+        no_wall_blocking = []
+        for di, dj in has_cell:
+            if (di, dj) == directions[0] and self.__cells[i][j].has_top_wall:
+                continue
+            elif (di, dj) == directions[1] and self.__cells[i][j].has_bottom_wall:
+                continue
+            elif (di, dj) == directions[2] and self.__cells[i][j].has_left_wall:
+                continue
+            elif (di, dj) == directions[3] and self.__cells[i][j].has_right_wall:
+                continue
+            no_wall_blocking.append((di, dj))
+        # And not been been visited,
+        unvisited = []
+        for di, dj in no_wall_blocking:
+            if self.__cells[i + di][j + dj].visited:
+                continue
+            unvisited.append((di, dj))
+
+        # Then draw a move there
+        if unvisited:
+            for di, dj in unvisited:
+                self.__cells[i][j].draw_move(self.__cells[i + di][j + dj])
+                result = self._solve_r(i + di, j + dj)
+                if result:
+                    return True
+                else:
+                    self.__cells[i][j].draw_move(self.__cells[i + di][j + dj], undo=True)
+        return False
+
 
 def main():
     win = Window(800, 500)
 
     # Create a test maze
-    maze = Maze(50, 50, 15, 25, 20, 20, win)
+    num_cols = 25
+    num_rows = 10
+    cell_size_x = 20
+    cell_size_y = 20
+    maze = Maze(50, 50, num_rows, num_cols, cell_size_x, cell_size_y, win)
+    print(maze.solve())
 
     win.wait_for_close()
 
