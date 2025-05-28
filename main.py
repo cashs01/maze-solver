@@ -271,12 +271,11 @@ def main():
     win = Window(800, 500)
 
     # Create a test maze
-    num_cols = 25
-    num_rows = 10
+    num_cols = 35
+    num_rows = 20
     cell_size_x = 20
     cell_size_y = 20
     maze = Maze(50, 50, num_rows, num_cols, cell_size_x, cell_size_y, win)
-    print(maze.solve())
 
     win.wait_for_close()
 
