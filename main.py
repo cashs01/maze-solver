@@ -277,6 +277,8 @@ def main():
     cell_size_y = 20
     maze = Maze(50, 50, num_rows, num_cols, cell_size_x, cell_size_y, win)
 
+    maze.solve()
+
     win.wait_for_close()
 
 
